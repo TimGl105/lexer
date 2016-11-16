@@ -6,6 +6,7 @@
 #include <iterator>
 #include <algorithm>
 #include <type_traits>
+#include <iostream>
 
 template<typename T> class Vector;
 
@@ -137,11 +138,13 @@ public:
 
 	template<typename InputIterator> iterator insert(iterator target, InputIterator begin, InputIterator end) {
 		std::size_t element_count = std::distance(begin, end);
+		//std::cout << "Element_count:" << element_count << std::endl;
 		difference_type offset = std::distance(this->begin(), target);
-
+		//std::cout << offset << std::endl;
 		this->resize_on_demand(element_count);
+		//std::cout << this.c_str() << std::endl;
 		target = this->begin() + offset;
-
+		//std::cout << target << std::endl;
 		std::copy_backward(target, this->end(), this->end() + element_count);
 		this->next_free_space += element_count;
 		std::copy(begin, end, target);
