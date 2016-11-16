@@ -41,6 +41,7 @@ int main() {
 	
 	//std::cout << v_string[2] << std::endl;
 	//std::cout << *v_vector[2].find("world") << std::endl;
-
+	
+	insert(string2_vec, 
 	
 }
