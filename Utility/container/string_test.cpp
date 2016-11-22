@@ -1,5 +1,4 @@
 #include "string.h"
-#include "string.cpp"
 #include <iostream>
 #include <utility>
 
