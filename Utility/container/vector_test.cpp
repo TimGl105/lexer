@@ -44,4 +44,25 @@ int main() {
 	
 	insert(string2_vec, 
 	
+	/** iterator find(const value_type& value)
+	
+	/** bool contains(const value_type& value) const 
+	
+	/** clear()
+	
+	/** pop_back()
+	
+	/** iterator begin()/ end()
+	
+	/** template<typename InputIterator> iterator insert(iterator target, InputIterator begin, InputIterator end)
+	
+	/** std::size_t size() const
+	
+	/** std::size_t capacity() const
+	
+	/** std::size_t free_capacity() const 
+	
+	/** void push_back(const value_type& object)
+	
+	
 }
