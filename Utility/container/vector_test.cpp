@@ -8,9 +8,9 @@
 #include <iostream>
 #include "string.h"
 
-void t_out(bool t) { std::cout << t << std::endl; };
+void t_out(bool t) { std::cout << t << std::endl; }
 
-void s_out(const String& string) { std::cout << string.c_str() << std::endl;};
+void s_out(const String& string) { std::cout << string.c_str() << std::endl; }
 
 int main() {
 
@@ -36,16 +36,17 @@ int main() {
 	Vector<Vector<String>> vector_vec(10);
 	vector_vec.push_back(string_vec);
 	Vector<String> str_vec2;
+	std::cout << "what" << std::endl;
 	if (vector_vec.pop_back().contains("end")) {
-		str_vec2.insert(++str_vec2.begin(), string_vec.rend(), ++string_vec.rbegin());
+		str_vec2.insert(str_vec2.begin()+1, string_vec.rend(), string_vec.rbegin()+1);
 	}
-	std::cout << str_vec2.
+	//std::cout << str_vec2.
 	
 	//done
 	//std::cout << vector_vec[10].pop_back().c_str() << std::endl;
-	t_out("end1" == vector_vec[10].pop_back().c_str());
+	t_out(0 == strcmp("end1", vector_vec[10].pop_back().c_str()));
 	//std::cout << vector_vec.pop_back().pop_back().c_str() << std::endl;
-	t_out("end2" == vector_vec.pop_back().pop_back().c_str());
+	t_out(0 == strcmp("end2", vector_vec.pop_back().pop_back().c_str()));
 
 	//done
 	vector_vec.clear();
@@ -64,7 +65,7 @@ int main() {
 	str_ult.push_back("0");
 	str_ult.push_back("-1");
 	if (str_ult.contains("-1")) {
-		str_ult.insert(++str_ult.begin(), str_ult.rend(), ++str_ult.rbegin());
+		str_ult.insert(str_ult.begin()+1, str_ult.rend(), str_ult.rbegin()+1);
 	}
 	s_out(str_ult.pop_back());
 	s_out(str_ult.pop_back());
