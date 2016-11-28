@@ -7,25 +7,36 @@
 #include <cstring>
 #include <iterator>
 
-template<typename T> class UnorderedMapIterator : public std::iterator<std::bidirectional_iterator_tag, T, std::size_t> {
+template<typename T> class UnorderedMapIterator : public std::iterator<std::forward_iterator_tag, T, std::size_t> {
 private:
 	typedef typename Vector<Vector<T>>::iterator bucket_iterator_type;
 	typedef typename Vector<T>::iterator iterator_type;
 
 	bucket_iterator_type bucket_iterator;
 	iterator_type iterator;
+	iterator_type end;
+
+	void next() {
+		iterator_type bucket_iterator_end = (*this->bucket_iterator).end();
+		if (this->iterator == bucket_iterator_end || ++this->iterator == bucket_iterator_end) {
+			while (this->iterator == bucket_iterator_end && bucket_iterator_end != this->end) {
+				++this->bucket_iterator;
+				this->iterator = (*this->bucket_iterator).begin();
+				bucket_iterator_end = (*this->bucket_iterator).end();
+			}
+		}
+	}
 
 public:
-	UnorderedMapIterator(bucket_iterator_type bucket_iterator, iterator_type iterator) : bucket_iterator(bucket_iterator), iterator(iterator) {}
-	UnorderedMapIterator(const UnorderedMapIterator<T>& source) : bucket_iterator(source.bucket_iterator), iterator(source.iterator) {}
+	UnorderedMapIterator(bucket_iterator_type bucket_iterator, iterator_type iterator, iterator_type end)
+		: bucket_iterator(bucket_iterator), iterator(iterator), end(end) {
+		if (iterator == (*bucket_iterator).end()) this->next();
+	}
+
+	UnorderedMapIterator(const UnorderedMapIterator<T>& source) : bucket_iterator(source.bucket_iterator), iterator(source.iterator), end(source.end) {}
 
 	UnorderedMapIterator& operator++() {
-		if (this->iterator == (*this->bucket_iterator).end()) {
-			++this->bucket_iterator;
-			this->iterator = (*this->bucket_iterator).begin();
-		}
-		else ++this->iterator;
-
+		this->next();
 		return *this;
 	}
 
@@ -36,22 +47,23 @@ public:
 	}
 
 	bool operator==(const UnorderedMapIterator& other) const {
-		return this->iterator == other.iterator && this->bucket_iterator == other.bucket_iterator;
+		return this->iterator == other.iterator && this->bucket_iterator == other.bucket_iterator
+			|| this->iterator == (*this->bucket_iterator).end() && other.iterator == (*other.bucket_iterator).end();
 	}
 
 	bool operator!=(const UnorderedMapIterator& other) const {
 		return !(*this == other);
 	}
 
-	decltype(typename std::iterator_traits<typename Vector<T>::iterator>::value_type) operator*() {
+	typename std::iterator_traits<typename Vector<T>::iterator>::value_type& operator*() {
 		return *this->iterator;
 	}
 
-	decltype(typename std::iterator_traits<typename Vector<T>::const_iterator>::value_type) operator*() const {
+	const typename std::iterator_traits<typename Vector<T>::const_iterator>::value_type& operator*() const {
 		return *this->iterator;
 	}
-
 };
+
 
 template<typename F, typename S> struct Pair;
 
@@ -84,6 +96,7 @@ template<typename K, typename V, typename Hash, typename Compare> void swap(Unor
 
 template<typename K, typename V, typename Hash = std::hash<K>, typename Compare = std::equal_to<K>> class UnorderedMap {
 public:
+std::size_t duplicates = 0;
 	typedef K key_type;
 	typedef V value_type;
 	typedef Hash hash_type;
@@ -95,7 +108,6 @@ public:
 private:
 	const static std::size_t INITIAL_BUCKET_CAPACITY = 256;
 	const static double RESIZE_FACTOR, LOAD_FACTOR;
-
 	Vector<Vector<entry_type>> buckets;
 	hash_type hash;
 	comparator_type comparator;
@@ -115,7 +127,7 @@ private:
 
 	typename Vector<entry_type>::iterator find_entry(Vector<entry_type>& values, const key_type& key) {
 		for (typename Vector<entry_type>::iterator iterator = values.begin(), end = values.end(); iterator != end; ++iterator) {
-			if (this->comparator(iterator->first, key)) return iterator;
+			if (this->comparator((*iterator).first, key)) return iterator;
 		}
 
 		return values.end();
@@ -128,13 +140,11 @@ private:
 
 	void resize_on_demand(std::size_t required_space) {
 		if (this->size() + required_space > this->maximum_load) {
-			this->resize((this->size() + required_space) * RESIZE_FACTOR);
+			this->resize((this->buckets.size() + required_space) * RESIZE_FACTOR);
 		}
 	}
 
 	typename Vector<entry_type>::iterator force_insert(const key_type& key, const value_type& value, typename Vector<Vector<entry_type>>::iterator hint) {
-		this->resize_on_demand(1);
-
 		auto& bucket = *hint;
 		bucket.emplace_back(key, value);
 		++this->entry_count;
@@ -144,16 +154,28 @@ private:
 
 	UnorderedMap(UnorderedMap<key_type, value_type, hash_type, comparator_type>&& source, std::size_t bucket_capacity)
 		: UnorderedMap(bucket_capacity, source.hash, source.comparator) {
+		this->entry_count = source.entry_count;
 
 		auto end = source.end();
 		for (auto iterator = source.begin(); iterator != end; ++iterator) {
-			this->buckets[this->bucket_index((*iterator).first)].push_back(std::move(*iterator));
+			const K& key = (*iterator).first;
+			this->buckets[this->bucket_index(key)].push_back(*iterator);
 		}
 	}
 
+	typename Vector<entry_type>::const_iterator end_iterator() const {
+		return this->buckets[this->buckets.size() - 1].cend();
+	}
+
+	typename Vector<entry_type>::iterator end_iterator() {
+		return this->buckets[this->buckets.size() - 1].end();
+	}
+
 public:
+	friend void swap<>(UnorderedMap<key_type, value_type, hash_type, comparator_type>& left, UnorderedMap<key_type, value_type, hash_type, comparator_type>& right);
+
 	explicit UnorderedMap(std::size_t bucket_capacity = INITIAL_BUCKET_CAPACITY, hash_type hash = hash_type(), comparator_type comparator = comparator_type())
-		: buckets(bucket_capacity, Vector<entry_type>()), hash(hash), entry_count(0), comparator(comparator), maximum_load(bucket_capacity * LOAD_FACTOR) {}
+		: buckets(bucket_capacity, Vector<entry_type>(2)), hash(hash), entry_count(0), comparator(comparator), maximum_load(bucket_capacity * LOAD_FACTOR) {}
 
 	UnorderedMap(hash_type hash, comparator_type comparator = comparator_type()) : UnorderedMap(INITIAL_BUCKET_CAPACITY, hash, comparator) {}
 	UnorderedMap(comparator_type comparator) : UnorderedMap(hash_type(), comparator) {}
@@ -166,7 +188,8 @@ public:
 	UnorderedMap(const UnorderedMap<key_type, value_type, hash_type, comparator_type>& source)
 		: buckets(source.capacity()), hash(source.hash), entry_count(source.size()), comparator(source.comparator), maximum_load(source.capacity() * LOAD_FACTOR) {
 
-		this->buckets.insert(this->buckets.begin(), source.buckets.begin(), source.buckets.cend());
+		this->buckets.insert(this->buckets.begin(), source.buckets.cbegin(), source.buckets.cend());
+
 	}
 
 	UnorderedMap(UnorderedMap<key_type, value_type, hash_type, comparator_type>&& source)
@@ -185,32 +208,35 @@ public:
 	}
 
 	iterator insert(const key_type& key, const value_type& value) {
+		this->resize_on_demand(1);
+
 		Vector<entry_type>& values = this->buckets[this->bucket_index(key)];
 
 		typename Vector<entry_type>::iterator iterator = this->find_entry(values, key);
 
-		if (iterator == values.end()) return UnorderedMapIterator<entry_type>(&values, this->force_insert(key, value, &values));
-		return UnorderedMapIterator<entry_type>(&values, iterator);
+		if (iterator == values.end()) return UnorderedMapIterator<entry_type>(&values, this->force_insert(key, value, &values), this->end_iterator());
+++duplicates;
+		return UnorderedMapIterator<entry_type>(&values, iterator, this->end_iterator());
 	}
 
 	iterator force_insert(const key_type& key, const value_type& value, iterator hint) {
 		typename Vector<entry_type>::iterator iterator = this->force_insert(key, value, hint.bucket_iterator);
 
-		return UnorderedMapIterator<entry_type>(hint.bucket_iterator, iterator);
+		return UnorderedMapIterator<entry_type>(hint.bucket_iterator, iterator, this->end_iterator());
 	}
 
 	iterator find(const key_type& key) {
 		Vector<entry_type>& values = this->buckets[this->bucket_index(key)];
 		typename Vector<entry_type>::iterator iterator = this->find_entry(values, key);
 
-		return UnorderedMapIterator<entry_type>(&values, iterator);
+		return UnorderedMapIterator<entry_type>(&values, iterator, this->end_iterator());
 	}
 
 	const_iterator find(const key_type& key) const {
 		Vector<entry_type>& values = this->buckets[this->bucket_index(key)];
 		typename Vector<entry_type>::const_iterator iterator = this->find_entry(values, key);
 
-		return UnorderedMapIterator<const entry_type>(&values, iterator);
+		return UnorderedMapIterator<const entry_type>(&values, iterator, this->end_iterator());
 	}
 
 	std::size_t size() const {
@@ -219,22 +245,22 @@ public:
 
 	iterator begin() {
 		typename Vector<Vector<entry_type>>::iterator bucket_iterator = this->buckets.begin();
-		return UnorderedMap::iterator(bucket_iterator, bucket_iterator.begin());
+		return UnorderedMap::iterator(bucket_iterator, (*bucket_iterator).begin(), this->end_iterator());
 	}
 
 	const_iterator cbegin() const {
 		typename Vector<Vector<entry_type>>::const_iterator bucket_iterator = this->buckets.cbegin();
-		return UnorderedMap::const_iterator(bucket_iterator, bucket_iterator.cbegin());
+		return UnorderedMap::const_iterator(bucket_iterator, (*bucket_iterator).cbegin(), this->end_iterator());
 	}
 
 	iterator end() {
 		typename Vector<Vector<entry_type>>::iterator bucket_iterator = this->buckets.end() - 1;
-		return UnorderedMap::iterator(bucket_iterator, bucket_iterator.end());
+		return UnorderedMap::iterator(bucket_iterator, (*bucket_iterator).end(), this->end_iterator());
 	}
 
 	const_iterator cend() const {
 		typename Vector<Vector<entry_type>>::const_iterator bucket_iterator = this->buckets.cend() - 1;
-		return UnorderedMap::const_iterator(bucket_iterator, bucket_iterator.cbegin());
+		return UnorderedMap::const_iterator(bucket_iterator, (*bucket_iterator).cend(), this->end_iterator());
 	}
 };
 
