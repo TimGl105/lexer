@@ -73,7 +73,7 @@ int main() {
 	String str_const("const");
 	std::cout << str_const[2] << std::endl;
 	//str_const[2]);
-	/*
+	
 	String str_index(str_1);
 	std::cout << "d" == str_index[3] << std::endl;
 	std::cout << "w" == str_index[5] << std::endl;
@@ -88,11 +88,11 @@ int main() {
 	
 	String str_empty2;
 	
-	/*
+	
 	std::cout << string_1 == string_3 << std::endl;
 	std::cout << str_empty == str_empty2 << std::endl;
 	std::cout << string_one_char != string_one_char_2 << std::endl;
-	*/
+	
 	string_1.clear();
 	test_out("", string_1);
 	

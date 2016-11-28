@@ -112,7 +112,7 @@ int main() {
 	Vector<String> p3_vec(std::size_t(250000), "p3");
 	Vector<String> p4_vec(std::size_t(250000));
 	for (int i = 1; i <= 250000; i++) {
-		p4_vec.push_back(std::to_string(i).c_str());
+		p4_vec.push_back(std::to_string(i));
 	}
 	
 	mill_vec.insert(mill_vec.begin(), p4_vec.begin(), p4_vec.end());
@@ -121,13 +121,13 @@ int main() {
 	mill_vec.insert(mill_vec.begin() + 250000, p2_vec.begin(), p2_vec.end());
 	
 	
-	std::vector<String> mill_vec_std(std::size_t(1000000));
+	vector<String> mill_vec_std(std::size_t(1000000));
 	std::vector<String> p1_vec_std(std::size_t(250000), "p1");
 	std::vector<String> p2_vec_std(std::size_t(250000), "p2");
 	std::vector<String> p3_vec_std(std::size_t(250000), "p3");
 	std::vector<String> p4_vec_std(std::size_t(250000));
 	for (int i = 1; i <= 250000; i++) {
-		p4_vec_std.push_back(std::to_string(i).c_str());
+		p4_vec_std.push_back(std::to_string(i));
 	}
 	
 	mill_vec.insert<String>(mill_vec_std.begin(), p4_vec_std.begin(), p4_vec_std.end());
