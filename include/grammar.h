@@ -70,10 +70,7 @@ class GrammarProduction {
 
 class GrammarWord {
 public:
-   Vector<GrammarCharacter> characters;
-   Vector<TokenType> firsts;
-   Vector<TokenType> follows;
-   GrammarCharacter currentCharacter = characters[0];
+   Vector<GrammarCharacter> characters; //better: sorted list
 };
 
 class GrammarCharacter {
