@@ -3,6 +3,8 @@
 
 #include "grammar.h"
 
+using namespace "grammar.h"
+
 class Parser {
 private:
 	GrammarWord[][] parse_table;

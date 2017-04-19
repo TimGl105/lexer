@@ -8,6 +8,8 @@
 #define VARIABLE 1
 #define TOKEN 2
 
+using namespace "token.h"
+
 enum class GrammarVariable : unsigned char {
 	PROG,
 	DECLS,
