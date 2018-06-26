@@ -3,23 +3,18 @@
 
 #include "scanner.h"
 #include "token.h"
-
-#define UNDEF 0
-#define VARIABLE 1
-#define TOKEN 2
-
-using namespace "token.h"
+#include "vector.h"
 
 enum class GrammarVariable : unsigned char {
 	PROG,
 	DECLS,
 	DECL,
 	ARRAY,
-	
+
 	STATEMENT,
 	STATEMENTS,
-	EXP;
-	EXP_2;
+	EXP,
+	EXP_2,
 	INDEX,
 	OP_EXP,
 	OP
@@ -28,46 +23,48 @@ enum class GrammarVariable : unsigned char {
 class First {
 private:
 	Vector<Vector<TokenType>> firsts;
-	
-	firsts[PROG] = {INT};
-	firsts[DECLS] = {EPSILON, INT};
-	firsts[DECL] = {INT};
-	firsts[ARRAY] = {SQUARE_BRACKET_OPEN, EPSILON};
-	firsts[STATEMENT] = {EPSILON, IDENTIFIER, WRITE, READ, CURLY_BRACKET_OPEN, IF, WHILE};
-	firsts[STATEMENTS] = {IDENTIFIER, WRITE, READ, CURLY_BRACKET_OPEN, IF, WHILE};
-	firsts[EXP] = {PARENTHESIS_OPEN, IDENTIFIER, INTEGER, MINUS, NOT};
-	firsts[EXP_2] = {PARENTHESIS_OPEN, IDENTIFIER, INTEGER, MINUS, NOT};
-	firsts[INDEX] = {SQUARE_BRACKET_OPEN, EPSILON};
-	firsts[OP_EXP] = {EPSILON, PLUS, MINUS, COLON, ASTERISK, LESS_THAN,GREATER_THAN, EQUALITY, WHATEVER, LOGICAL_AND};
-	firsts[OP] = {PLUS, MINUS, COLON, ASTERISK, LESS_THAN,GREATER_THAN, EQUALITY, WHATEVER, LOGICAL_AND};
+
+public:
+    First();
 };
 
 class Follow {
 private:
 	Vector<Vector<TokenType>> follows;
-	
-	follows[PROG] = {};
-	follows[DECLS] = {IDENTIFIER, WRITE, READ, CURLY_BRAKET_OPEN, IF, WHILE};
-	follows[DECL] = {SEMICOLON};
-	follows[ARRAY] = {IDENTIFIER};
-	follows[STATEMENTS] = {CURLY_BRACKET_CLOSE};
-	follows[STATEMENT] = {SEMICOLON, ELSE};
-	follows[EXP] = {SEMICOLON, ELSE, PARENTHESIS_CLOSE, SQUARE_BRACKET_CLOSE};
-	follows[EXP_2] = {PLUS, MINUS, COLON, ASTERISK, LESS_THAN,GREATER_THAN, EQUALITY, WHATEVER, LOGICAL_AND};
-	follows[INDEX] = {ASSIGNMENT, PARENTHESIS_CLOSE, PLUS, MINUS, COLON, ASTERISK, LESS_THAN,GREATER_THAN, EQUALITY, WHATEVER, LOGICAL_AND};
-	follows[OP_EXP] = {SEMICOLON, ELSE, PARENTHESIS_CLOSE, SQUARE_BRACKET_CLOSE};
-	follows[OP] = {PARENTHESIS_OPEN, IDENTIFIER, INTEGER, MINUS, NOT};
-}
 
-class Grammar {
 public:
-    GrammarVariable start = GrammarVariable::PROG;
-    Vector<GrammarProduction> productions; 
+    Follow();
+
+	Vector<TokenType> get_follows_for_type(GrammarVariable variable) {
+		return follows[static_cast<std::size_t>(variable)];
+	}
 };
 
-class GrammarProduction {
-	GrammarVariable start;
-	Vector<GrammarWord> words;
+class GrammarCharacter {
+private:
+    enum class dreck {
+        VARIABLE,
+        TOKEN
+    };
+
+    struct GrammarCharacterType { // constructor missing which sets variable
+		dreck type;
+		union Variable_or_token
+		{
+			GrammarVariable variable;
+			TokenType token;
+		} variable_or_token;
+	} grammar_character_type;
+
+public:
+
+   bool is_grammar_variable () {
+       return grammar_character_type.type == dreck::VARIABLE;
+   }
+
+   bool is_token_type () {
+       return grammar_character_type.type == dreck::TOKEN;
+   }
 };
 
 class GrammarWord {
@@ -75,21 +72,18 @@ public:
    Vector<GrammarCharacter> characters; //better: sorted list
 };
 
-class GrammarCharacter {
-public:
-	struct GrammarCharacterType {
-		int type;
-		union Variable_or_token{
-			GrammarVariable variable;
-			TokenType token;
-		} variable_or_token1; 
-	};
-   
-   bool is_token_type () {
-	   if (variable_or_token1.type == TOKEN) : return true ? return false;  
-   }
-   
-   bool is_grammar_variable () {
-   	   if (variable_or_token1.type == VARIABLE) : return true ? return false;  
-   }
+class GrammarProduction {
+	GrammarVariable start;
+	Vector<GrammarWord> words;
 };
+
+
+class Grammar {
+public:
+    GrammarVariable start = GrammarVariable::PROG;
+    Vector<GrammarProduction> productions;
+};
+
+
+
+#endif // GRAMMAR_H
